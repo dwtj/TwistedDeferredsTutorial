@@ -53,7 +53,7 @@ So, one can think of the asynchronous programmer's job in the following way: he 
 
 
 
-### What's in a name? ###
+### What's in a Name? ###
 
 The Twisted literature seems to usually use the term "asynchronous programming", but I personally, I find the terms **event-driven programming** and **event-loop programming** to be much more descriptive terms for this programming paradigm.
 
@@ -72,9 +72,23 @@ Asynchronous programming is a very appealing alternative to multi-threaded progr
 Deferreds
 ---------
 
-Deferreds are used by a Twisted application to set up work that needs to be done using input that might not be available yet.
+[Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) are used by Twisted applications to set up work that needs to be done once an event has occured. Let's understand this simple idea by explaining a few simple examples.
+
+
+### Deferreds can be fired by a system timer. ###
+
+[`timer.py`](timer.py)
 
 
 
+### Deferreds can use the callbacks to process a blocking input. ###
 
-### How To Use Deferreds: Set Up the Work To Be Done ###
+Deferreds can be used to encapsulate an input that might not be available yet. You can chain a series of callbacks to respond to this input.
+
+[`blocking_input.py`](blocking_input.py)
+
+
+
+### Deferreds can build up work to be done on a promise. ###
+
+This is the most involved example: [`build_up_work.py`](build_up_work.py)
