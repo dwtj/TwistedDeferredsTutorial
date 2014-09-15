@@ -3,7 +3,7 @@ Twisted Tutorial
 
 This tutorial introduces the [Twisted](https://twistedmatrix.com) networking library for Python. We focus on explaining two concepts which any programmer should understand before trying to make or modify any Twisted application: *asynchronous programming* and *Deferreds*.
 
-If you are already familiar with asynchronous programming (a.k.a. event-driven programming, event-loop programming, reactive programming, the reactor pattern) feel free to jump ahead to [the Twisted-specific stuff](#Deferreds).
+If you are already familiar with asynchronous programming (a.k.a. event-driven programming, event-loop programming, reactive programming, the reactor pattern) feel free to jump ahead to [the Twisted-specific stuff](#deferreds).
 
 
 
