@@ -40,7 +40,7 @@ When programming within the multi-threaded paradigm, the programmer must always 
 
 There is (generally) just one thread of execution which is handling all of these events. Each event is handled in turn, one-by-one. The whole process looks like this:
 
-(1) The event-loop (fairly) chooses a single event, call it `ev`, to be handled. This `ev` is chosen from the set of recently fired events, each of which is waiting to be handled.
+(1) The event-loop chooses a single event, call it `ev`, to be handled. This `ev` is chosen from the set of recently fired events, each of which is waiting to be handled.
 
 (2) The event-loop calls the event handler for `ev` (possibly with some just-arrived data). This handler is run to completion.
 
@@ -60,7 +60,7 @@ The Twisted literature seems to usually use the term "asynchronous programming",
 
 
 
-### What's it Good For? ###
+### What's It Good For? ###
 
 Asynchronous programming is a very appealing alternative to multi-threaded programming when trying to solving certain kinds of problems, in particular, when making [I/O-bound systems](http://en.wikipedia.org/wiki/I/O_bound). It is used very often in both GUI programming and networking programming.
 
