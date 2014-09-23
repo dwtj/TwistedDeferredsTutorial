@@ -72,17 +72,86 @@ Asynchronous programming is a very appealing alternative to multi-threaded progr
 Deferreds
 ---------
 
-[Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) are used by Twisted applications to set up work that needs to be done once an event has occured. Let's understand this simple idea by explaining a few simple examples.
+[Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) are used by Twisted applications to set up work that needs to be done once an event has occured. Let's get a sense of this abstraction using a few simple examples.
 
 
 ### Deferreds can be fired by a system timer. ###
 
-[`timer.py`](timer.py)
+Consider the [`print_later.py`](print_later.py) program:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.python}
+#!/usr/bin/env python
+
+from __future__ import print_function
+from twisted.internet import reactor, task
+
+def print_later(mesg):
+    ''' Prints the given `mesg` after 1 second has passed. '''
+    task.deferLater(reactor, 1, print, mesg)
+
+print_later("The future is now!")
+reactor.run()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By calling `deferLater`, we are setting up some (admittedly trivial) work to be done after a time. In this case, we are telling the `reactor` to wait 1 second before it should call the `print` function with `mesg` as its argument. (If you are familiar with Javascript, then this is just like [`setTimeout()`](http://www.w3schools.com/js/js_timing.asp)
+
+The `reactor` is Twisted's way of implementing the event-loop. It monitors events and executes any callbacks which have been assigned to handle these events. Note that once you call `reactor`, the event-loop takes over. Your program effectively blocks on that line until the reactor shuts down. In our example program, we have not given the reactor any instruction to shut itself down. You can shut it down manually by typing `Ctrl-C`.
+
+When I first read about the `reactor`, it gave me the mental image of a nuclear reactor powering a program. But this is wrong metaphor. The `reactor` is just the object which is there to *react* to and handle events as they occur.
 
 
 
-### Deferreds can use the callbacks to process a blocking input. ###
 
-Deferreds can be used to encapsulate an input that might not be available yet. You can chain a series of callbacks to respond to this input.
+### Twisted application code can create and fire its own deferreds. ###
 
-[`blocking_input.py`](blocking_input.py)
+In the example above, `deferLater` is using a `Deferred` object under the hood in order to perform the callback to `print`. However, this is an extremely limited use of deferreds. In order to understand how they are used more generally, let's rewrite this program as [`print_later_twice.py`](print_later_twice.py) such that we manually construct and fire our deferred.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.python}
+#!/usr/bin/env python
+
+from __future__ import print_function
+from twisted.internet import reactor, defer
+
+def print_and_passthrough(result):
+    print(result)
+    return result
+
+def print_later_twice(mesg):
+    ''' Prints the given `mesg` after 1 second has passed. '''
+    d = defer.Deferred()
+    d.addCallback(print_and_passthough)
+    d.addCallback(print_and_passthough)
+    reactor.callLater(1, d.callback, mesg)
+
+print_later_twice("The future is now!")
+reactor.run()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here we can more clearly see the key momemnts involved in the lifetime of a `Deferred` object:
+
+1. Line 8: A generic `Deferred` object is constructed on line 8.
+2. Lines 9-10: A sequence of callback functions is added to this `Deferred`'s *callback-chain*. on lines 9-10.
+3. Line 11: The `Deferred` is fired using its `callback()` method with a `result`. (In this case, we are telling `reactor` to fire `d` with `mesg` after 1 second of waiting.)
+
+When the `Deferred` is fired, each callback which has been added to the `Deferred`'s callback-chain will be run, one after the other. The object with which the `Deferred` was fired will be passed as the `result` of the first callback function. The argument to subsequent callbacks will be the return value of the preceeding callback.
+
+In our example, our first callback just passes `result` on to the second callback without any changes. However, it can be useful to think of callbacks as stages in a pipeline to incrementally transform an initial input into some output
+
+
+
+
+### Deferreds use callbacks to process input from a blocking source. ###
+
+In the previous examples, we've explained some of the basics building and using `Deferred` objects and how we can use the reactor to create timer event fire a deferred. However, in `Twisted` applications the most common kind of event which fires a deferred is the arrival of input from some blocking source. An example be input arriving from a network connection.
+
+So, a `Deferred` object is a way of encapsulating
+
+1. a `result` of some process (e.g. network process) that might not be available yet, and
+2. a sequence of functions for processing this `result` once it arrives.
+
+It can be useful to think of the callback chain as a sequence of functions called in order to *react* to a `result` *once it becomes available*. When using the Twisted API, is often the reactor's responsibility to fire `Deferred` objects once a `result` becomes available, and it is often the client code which adds functions to the callback chain. The [`blocking_input.py`](blocking_input.py) program illustrates this:
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.python}
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
