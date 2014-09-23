@@ -149,9 +149,48 @@ So, a `Deferred` object is a way of encapsulating
 1. a `result` of some process (e.g. network process) that might not be available yet, and
 2. a sequence of functions for processing this `result` once it arrives.
 
-It can be useful to think of the callback chain as a sequence of functions called in order to *react* to a `result` *once it becomes available*. When using the Twisted API, is often the reactor's responsibility to fire `Deferred` objects once a `result` becomes available, and it is often the client code which adds functions to the callback chain. The [`blocking_input.py`](blocking_input.py) program illustrates this:
+It can be useful to think of the callback chain as a sequence of functions called in order to *react* to a `result` once it becomes available. When using the Twisted API, is often the reactor's responsibility to fire `Deferred` objects once a `result` becomes available, and it is often the client code which adds functions to the callback chain. The [`blocking_input.py`](blocking_input.py) program illustrates this:
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.python}
+#!/usr/bin/env python
 
+from __future__ import print_function
+from twisted.internet import reactor, defer
+from twisted.web import client
+
+urls = [ 'http://www.google.com'
+       , 'http://www.twitter.com'
+       , 'http://www.facebook.com'
+       , 'http://www.apple.com'
+       , 'http://www.oracle.com'
+       , 'a_bad_url' ]
+
+pages = {}
+
+def request_page(url):
+
+    # Create three closures and make them callbacks/errbacks for handling
+    # the `getPage` request.
+
+    def save_result(result):
+        pages[url] = result
+        return result
+
+    def report_success(result):
+        print('Successfully downloaded `{}`.'.format(url))
+        return result
+
+    def report_failure(failure):
+        print('Failed to download `{}`.'.format(url))
+        return None
+
+    d = client.getPage(url)
+    d.addCallbacks(report_success, report_failure)
+    d.addCallback(save_result)
+
+for url in urls:
+    request_page(url)
+
+reactor.run()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
