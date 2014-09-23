@@ -86,9 +86,3 @@ Deferreds
 Deferreds can be used to encapsulate an input that might not be available yet. You can chain a series of callbacks to respond to this input.
 
 [`blocking_input.py`](blocking_input.py)
-
-
-
-### Deferreds can build up work to be done on a promise. ###
-
-This is the most involved example: [`build_up_work.py`](build_up_work.py)
