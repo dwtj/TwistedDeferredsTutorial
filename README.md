@@ -142,15 +142,16 @@ In our example, our first callback just passes `result` on to the second callbac
 
 ### Deferreds use callbacks to process input from a blocking source. ###
 
-In the previous examples, we've explained some of the basics building and using `Deferred` objects and how we can use the reactor to create timer event fire a deferred. However, in `Twisted` applications the most common kind of event which fires a deferred is the arrival of input from some blocking source. An example be input arriving from a network connection.
+In the previous examples, we have demonstrated how to make the reactor create a timer event to fire a deferred. However, in `Twisted` applications the most common kind of event which fires a deferred is the arrival of input from some blocking source. A key example is input arriving from a network connection.
 
 So, a `Deferred` object is a way of encapsulating
 
 1. a `result` of some process (e.g. network process) that might not be available yet, and
-2. a sequence of functions for processing this `result` once it arrives.
+2. a sequence of functions (i.e. the callback chain) for processing this `result` once it arrives.
 
-It can be useful to think of the callback chain as a sequence of functions called in order to *react* to a `result` once it becomes available. When using the Twisted API, is often the reactor's responsibility to fire `Deferred` objects once a `result` becomes available, and it is often the client code which adds functions to the callback chain. The [`blocking_input.py`](blocking_input.py) program illustrates this:
+It can be useful to think of the callback chain as a sequence of functions called to *react* to the `result` once it becomes available. When using the Twisted API, is usually the reactor's responsibility to fire a `Deferred` object once a `result` becomes available, and it is usually the client code's responsibility to adds callbacks to specify how to react.
 
+Consider the [`blocking_input.py`](blocking_input.py) program. It registers with the reactor a number of web pages to be downloaded. Then when a particular web page has been downloaded, the reactor will fire the corresponding `Deferred` object, calling each of the callbacks on its callback chain.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.python}
 #!/usr/bin/env python
@@ -194,3 +195,39 @@ for url in urls:
 
 reactor.run()
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Downloading a web page is a blocking I/O operation: it can take a relatively long time time to complete. There is only one thread running, but we don't ever want our program to be idle if there is other work to be done. The key to obtaining asynchronous (i.e. event-driven) behavior is the `Deferred` object returned by calling `getPage()`.
+
+The first time that I ran this program, it printed the following:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Failed to download `a_bad_url`.
+Successfully downloaded `http://www.apple.com`.
+Successfully downloaded `http://www.oracle.com`.
+Successfully downloaded `http://www.google.com`.
+Successfully downloaded `http://www.facebook.com`.
+Successfully downloaded `http://www.twitter.com`.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Notice that the order in which we made the requests is not the order in which we made the `getPage()` requests: `result`s are not processed synchronously. Rather, the order in which processing occurs depends upon
+
+- the order in which each download completes, and
+- the whims of the `reactor`.
+
+So, when we call `getPage()`, the thread of execution which makes the request does not block on the request while downloading. Instead, a `Deferred` is returned immediately. It is with this `Deferred` object that our program will later obtain the page itself. The API says that the reactor will fire this `Deferred` with the downloaded page as its `result` when the download is complete.
+
+In the example above, the first callback added to each `Deferred` is the `report_success()` closure function; the second callback is the `save_result()` closure function. (`report_failure()`, on the other hand, is an `errback`. In this case, `report_failure()` is what is called instead of `report_success()` when the page could not be downloaded. This is what happens in the case of our request to `a_bad_url`.)
+
+So, once a page is successfully downloaded, the associated `Deferred` fires, and that `Deferred`'s `report_success()` prints a message with the associated `url`. Immediately after this, the `save_result()` callback is called, which saves the page into a shared data structure. Then, since the callback chain is complete, execution returns to the reactor, where another ready task can be selected and executed.
+
+Notice that modifying this global data structure with these multiple callback chains cannot possibly possibly cause race condition here, because the reactions to events are not happening simultaneously. The pages are processed one-by-one by a single thread. Here we see Twisted is using the asynchronous programming paradigm instead of the multi-threaded programming paradigm.
+
+
+
+## What's Next ##
+
+To learn how to use Twisted there are still a number of essential concepts to learn about. In particular, I would recommend researching:
+
+- the `Deferred` object's callback chain, in particular, specifics about `errbacks` which were only briefly mentioned here,
+- the `Protocol` class, and
+- the `ProtocolFactory` class.
