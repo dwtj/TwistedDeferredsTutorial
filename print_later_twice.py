@@ -8,7 +8,7 @@ def print_and_passthrough(result):
     return result
 
 def print_later_twice(mesg):
-    ''' Prints the given `mesg` after 1 second has passed. '''
+    ''' Prints the given `mesg` twice after 1 second has passed. '''
     d = defer.Deferred()
     d.addCallback(print_and_passthrough)
     d.addCallback(print_and_passthrough)
