@@ -129,9 +129,9 @@ reactor.run()
 
 Here we can more clearly see the key momemnts involved in the lifetime of a `Deferred` object:
 
-1. **Line 12:** A generic `Deferred` object is constructed on line 8.
-2. **Lines 13-14:** A sequence of callback functions is added to this `Deferred`'s *callback-chain*. on lines 9-10.
-3. **Line 15:** The `Deferred` is fired using its `callback()` method with a `result`. (In this case, we are telling `reactor` to fire `Deferred d` with `mesg` after 1 second of waiting.)
+- **Line 12:** A generic `Deferred` object is constructed.
+- **Lines 13-14:** A sequence of callback functions is added to this `Deferred`'s callback-chain.
+- **Line 15:** The `Deferred` is fired using its `callback()` method with a `result`. (In this case, we are telling `reactor` to fire `Deferred d` with `mesg` after 1 second of waiting.)
 
 When the `Deferred` is fired, the `reactor` will run each callback which has been added to the `Deferred`'s callback-chain, one callback after the other. The object with which the `Deferred` was fired will be passed as the `result` of the first callback function. The argument to subsequent callbacks will be the return value of the preceeding callback.
 
