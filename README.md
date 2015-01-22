@@ -119,8 +119,8 @@ def print_and_passthrough(result):
 def print_later_twice(mesg):
     ''' Prints the given `mesg` twice after 1 second has passed. '''
     d = defer.Deferred()
-    d.addCallback(print_and_passthough)
-    d.addCallback(print_and_passthough)
+    d.addCallback(print_and_passthrough)
+    d.addCallback(print_and_passthrough)
     reactor.callLater(1, d.callback, mesg)
 
 print_later_twice("The future is now!")
